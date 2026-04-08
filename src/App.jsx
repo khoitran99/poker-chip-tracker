@@ -5,6 +5,7 @@ import PlayersView from './components/PlayersView';
 import SessionList from './components/SessionList';
 import SessionDetail from './components/SessionDetail';
 import SummaryView from './components/SummaryView';
+import { Toaster } from "@/components/ui/sonner";
 
 export default function App() {
   const [players, setPlayers] = useLocalStorage('poker-players', []);
@@ -37,7 +38,6 @@ export default function App() {
           <SessionDetail 
             session={session} 
             updateSession={updateSession}
-            onBack={() => setSelectedSessionId(null)}
             players={players}
           />
         );
@@ -54,16 +54,21 @@ export default function App() {
 
   return (
     <>
-      <Navigation activeTab={activeTab} setActiveTab={(tab) => {
-        setActiveTab(tab);
-        // Clear selected session when switching top-level tabs
-        if (tab !== 'sessions') {
-          setSelectedSessionId(null);
-        }
-      }} />
-      <main className="container">
+      <Navigation 
+        activeTab={activeTab} 
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          if (tab !== 'sessions') {
+            setSelectedSessionId(null);
+          }
+        }}
+        activeSession={selectedSessionId ? sessions.find(s => s.id === selectedSessionId) : null}
+        onBackToSessions={() => setSelectedSessionId(null)}
+      />
+      <main className="container max-w-2xl mx-auto px-4 py-8">
         {renderContent()}
       </main>
+      <Toaster />
     </>
   );
 }
