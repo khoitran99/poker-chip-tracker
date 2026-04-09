@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { exportBulkToExcel } from '@/lib/exportUtils';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,12 +22,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, PlusCircle, History } from "lucide-react";
+import { Trash2, PlusCircle, History, Check, FileSpreadsheet, X } from "lucide-react";
+import { cn } from '@/lib/utils';
 
-export default function SessionList({ sessions, setSessions, onSelectSession }) {
+export default function SessionList({ sessions, setSessions, onSelectSession, players }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newSessionName, setNewSessionName] = useState("");
   const [sessionToDelete, setSessionToDelete] = useState(null);
+  
+  // Selection state
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const handleCreateSession = (e) => {
     e.preventDefault();
@@ -61,6 +67,18 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
     });
     return totalBuyIn;
   };
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkExport = () => {
+    const selectedSessions = sessions.filter(s => selectedIds.includes(s.id));
+    exportBulkToExcel(selectedSessions, players);
+    setIsSelectionMode(false);
+    setSelectedIds([]);
+  };
 
   return (
     <div className="animate-slide-up w-full">
@@ -70,7 +88,21 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
           <p className="text-muted-foreground text-sm mt-2 font-medium">Your past tracking sessions</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex gap-2">
+          {sessions.length > 0 && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsSelectionMode(!isSelectionMode);
+                setSelectedIds([]);
+              }}
+              className={cn("font-bold border-none", isSelectionMode ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted/50")}
+            >
+              {isSelectionMode ? "Cancel" : "Select"}
+            </Button>
+          )}
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="font-bold shadow-lg shadow-primary/20">
               New Session
@@ -113,6 +145,7 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       {sessions.length === 0 ? (
         <div className="bg-muted/30 text-center py-20 px-6 border-2 border-dashed border-border rounded-2xl">
@@ -127,11 +160,28 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
             return (
               <div 
                 key={session.id} 
-                className="group relative glass-card cursor-pointer p-6 animate-slide-up active:scale-[0.98] active:bg-muted/50 transition-all duration-200" 
+                className={cn(
+                  "group relative glass-card cursor-pointer p-6 animate-slide-up active:scale-[0.98] transition-all duration-200",
+                  selectedIds.includes(session.id) && "ring-2 ring-primary bg-primary/5"
+                )}
                 style={{ animationDelay: `${index * 80}ms` }}
-                onClick={() => onSelectSession(session.id)}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    toggleSelection(session.id);
+                  } else {
+                    onSelectSession(session.id);
+                  }
+                }}
               >
-                <div className="flex justify-between items-start relative z-10">
+                {isSelectionMode && (
+                  <div className={cn(
+                    "absolute top-4 left-4 h-6 w-6 rounded-full border-2 border-primary/20 flex items-center justify-center z-20 transition-all",
+                    selectedIds.includes(session.id) ? "bg-primary border-primary text-primary-foreground scale-110" : "bg-background"
+                  )}>
+                    {selectedIds.includes(session.id) && <Check className="h-4 w-4 stroke-[3]" />}
+                  </div>
+                )}
+                <div className={cn("flex justify-between items-start relative z-10", isSelectionMode && "pl-8")}>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-xl font-black truncate leading-tight tracking-tight group-hover:text-primary transition-colors">{session.name}</h3>
                     <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-wider">
@@ -196,6 +246,38 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Floating Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-10 duration-500 w-full max-w-md px-4">
+          <div className="bg-primary text-primary-foreground shadow-2xl rounded-3xl p-4 flex items-center justify-between gap-4 border border-white/10 backdrop-blur-xl">
+            <div className="flex items-center gap-3 pl-2">
+              <div className="bg-white/20 h-8 w-8 rounded-full flex items-center justify-center font-black text-sm">
+                {selectedIds.length}
+              </div>
+              <p className="font-bold text-sm tracking-tight">Sessions Selected</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 text-white hover:bg-white/10 rounded-xl"
+                onClick={() => setSelectedIds([])}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              <Button 
+                onClick={handleBulkExport}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-black h-10 px-6 rounded-xl shadow-lg border-none"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Export (.xlsx)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

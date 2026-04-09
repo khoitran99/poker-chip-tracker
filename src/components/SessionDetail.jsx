@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { exportSessionToExcel } from "@/lib/exportUtils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Trash2, Plus, X, AlertCircle, CheckCircle2, Search, UserPlus, Check, ListPlus } from "lucide-react";
+import { Users, Trash2, Plus, X, AlertCircle, CheckCircle2, Search, UserPlus, Check, ListPlus, FileSpreadsheet } from "lucide-react";
 
 const generateUniqueName = (name, currentPlayers) => {
   let uniqueName = name.trim();
@@ -184,8 +185,10 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                 {new Date(session.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
               </p>
             </div>
-            <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-              Live
+            <div className="flex gap-2">
+              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider h-max">
+                Live
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -523,6 +526,16 @@ export default function SessionDetail({ session, updateSession, players, setPlay
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <div className="flex justify-center pt-8 pb-12">
+        <Button
+          onClick={() => exportSessionToExcel(session, players)}
+          className="h-14 px-10 rounded-2xl shadow-2xl shadow-emerald-500/20 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg tracking-tight transition-all active:scale-95"
+        >
+          <FileSpreadsheet className="h-6 w-6 mr-3" />
+          Export Session Data (.xlsx)
+        </Button>
+      </div>
     </div>
   );
 }

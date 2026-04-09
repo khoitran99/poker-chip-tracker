@@ -48,6 +48,7 @@ export default function App() {
           sessions={sessions} 
           setSessions={setSessions} 
           onSelectSession={setSelectedSessionId} 
+          players={players}
         />
       );
     }
