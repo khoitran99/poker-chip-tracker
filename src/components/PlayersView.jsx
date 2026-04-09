@@ -13,11 +13,24 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Trash2, UserPlus, Users } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Trash2, UserPlus, Users, ListPlus } from "lucide-react";
 
 export default function PlayersView({ players, setPlayers }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [playerToDelete, setPlayerToDelete] = useState(null);
+  
+  // Bulk state
+  const [isBulkAdding, setIsBulkAdding] = useState(false);
+  const [bulkNames, setBulkNames] = useState('');
 
   const handleAddPlayer = (e) => {
     e.preventDefault();
@@ -39,6 +52,45 @@ export default function PlayersView({ players, setPlayers }) {
     toast.success(`${newPlayer.name} added to roster.`);
   };
 
+  const handleBulkAdd = (e) => {
+    e.preventDefault();
+    if (!bulkNames.trim()) return;
+
+    // Split by newlines or commas
+    const names = bulkNames
+      .split(/\n|,/)
+      .map(n => n.trim())
+      .filter(n => n.length > 0);
+
+    // Remove internal duplicates
+    const uniqueInputNames = [...new Set(names)];
+    
+    // Filter out names that already exist (case insensitive)
+    const existingNames = new Set(players.map(p => p.name.toLowerCase()));
+    const newNames = uniqueInputNames.filter(n => !existingNames.has(n.toLowerCase()));
+
+    if (newNames.length === 0) {
+      toast.info("No new unique players were found in your list.");
+      setIsBulkAdding(false);
+      setBulkNames("");
+      return;
+    }
+
+    const newPlayers = newNames.map(name => ({
+      id: (Date.now() + Math.random()).toString(),
+      name: name
+    }));
+
+    setPlayers([...players, ...newPlayers]);
+    setBulkNames("");
+    setIsBulkAdding(false);
+    toast.success(`Successfully added ${newPlayers.length} new players.`);
+    
+    if (uniqueInputNames.length > newNames.length) {
+      toast.info(`${uniqueInputNames.length - newNames.length} duplicates were skipped.`);
+    }
+  };
+
   const confirmDelete = () => {
     if (playerToDelete) {
       setPlayers(players.filter(p => p.id !== playerToDelete.id));
@@ -51,10 +103,21 @@ export default function PlayersView({ players, setPlayers }) {
     <div className="animate-slide-up w-full space-y-6">
       <Card className="glass-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-xl font-extrabold tracking-tight flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-primary" />
-            Add Player
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-extrabold tracking-tight flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              Add Player
+            </CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsBulkAdding(true)}
+              className="h-8 rounded-lg bg-primary/5 border-primary/20 hover:bg-primary/10 font-bold"
+            >
+              <ListPlus className="mr-2 h-4 w-4" />
+              Bulk Mode
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddPlayer} className="flex gap-2">
@@ -124,6 +187,49 @@ export default function PlayersView({ players, setPlayers }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isBulkAdding} onOpenChange={setIsBulkAdding}>
+        <DialogContent className="sm:max-w-[500px] rounded-3xl p-6 gap-6 glass-card border-none">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black tracking-tight">Bulk Register</DialogTitle>
+            <DialogDescription className="text-muted-foreground font-medium">
+              Enter multiple names separated by commas or new lines. Duplicates will be skipped automatically.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleBulkAdd} className="space-y-6">
+            <div className="space-y-3">
+              <Textarea
+                placeholder="Khoi, Alice, Bob..."
+                className="min-h-[200px] text-lg font-bold bg-muted/20 border-none shadow-inner rounded-2xl p-4 focus-visible:ring-primary/20 no-scrollbar"
+                value={bulkNames}
+                onChange={(e) => setBulkNames(e.target.value)}
+              />
+              <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground ml-1">
+                Found {bulkNames.split(/\n|,/).map(n => n.trim()).filter(n => n.length > 0).length} potential names
+              </p>
+            </div>
+            
+            <DialogFooter className="sm:justify-between gap-4 pt-4 border-t border-border/20">
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setIsBulkAdding(false)}
+                className="font-bold text-muted-foreground hover:bg-transparent"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={!bulkNames.trim()}
+                className="h-12 px-10 rounded-xl shadow-lg shadow-primary/20 font-bold active:scale-95 transition-all"
+              >
+                Add All Players
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
