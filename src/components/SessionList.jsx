@@ -127,7 +127,7 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
             return (
               <div 
                 key={session.id} 
-                className="group relative glass-card cursor-pointer p-6 animate-slide-up" 
+                className="group relative glass-card cursor-pointer p-6 animate-slide-up active:scale-[0.98] active:bg-muted/50 transition-all duration-200" 
                 style={{ animationDelay: `${index * 80}ms` }}
                 onClick={() => onSelectSession(session.id)}
               >

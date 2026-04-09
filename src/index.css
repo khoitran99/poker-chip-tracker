@@ -44,8 +44,10 @@
   @apply bg-card/60 backdrop-blur-md border border-border/40 shadow-xl transition-all duration-300;
 }
 
-.glass-card:hover {
-  @apply border-primary/20 shadow-primary/5 shadow-2xl;
+@media (hover: hover) {
+  .glass-card:hover {
+    @apply border-primary/20 shadow-primary/5 shadow-2xl;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -65,8 +67,10 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-border rounded;
 }
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground;
+@media (hover: hover) {
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
 }
 
 @layer base {

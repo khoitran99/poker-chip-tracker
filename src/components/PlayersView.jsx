@@ -153,7 +153,7 @@ export default function PlayersView({ players, setPlayers }) {
               {players.map((player, index) => (
                 <div 
                   key={player.id} 
-                  className="group flex justify-between items-center py-5 px-3 hover:bg-muted/50 rounded-xl transition-all border-b border-border/30 last:border-0 animate-slide-up"
+                  className="group flex justify-between items-center py-5 px-3 hover:bg-muted/50 rounded-xl transition-all border-b border-border/30 last:border-0 animate-slide-up active:bg-muted/30"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <span className="font-bold text-lg tracking-tight">{player.name}</span>

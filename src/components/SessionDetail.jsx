@@ -461,8 +461,13 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                           min="0"
                           value={p.buyIn} 
                           onChange={(e) => handleUpdateParticipant(p.playerId, 'buyIn', e.target.value)}
-                          className="h-11 bg-background border-none shadow-sm rounded-xl font-bold text-lg"
-                          onFocus={(e) => e.target.select()}
+                          className="h-11 bg-background border-none shadow-sm rounded-xl font-bold text-lg focus-visible:ring-primary/20"
+                          onFocus={(e) => {
+                            const target = e.target;
+                            setTimeout(() => {
+                              try { target.select(); } catch (e) {}
+                            }, 50);
+                          }}
                         />
                       </div>
                     </div>
@@ -474,8 +479,13 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                           min="0"
                           value={p.cashOut} 
                           onChange={(e) => handleUpdateParticipant(p.playerId, 'cashOut', e.target.value)}
-                          className="h-11 bg-background border-none shadow-sm rounded-xl font-bold text-lg"
-                          onFocus={(e) => e.target.select()}
+                          className="h-11 bg-background border-none shadow-sm rounded-xl font-bold text-lg focus-visible:ring-primary/20"
+                          onFocus={(e) => {
+                            const target = e.target;
+                            setTimeout(() => {
+                              try { target.select(); } catch (e) {}
+                            }, 50);
+                          }}
                         />
                       </div>
                     </div>
