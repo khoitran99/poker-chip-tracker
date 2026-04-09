@@ -33,18 +33,18 @@ export default function Navigation({ activeTab, setActiveTab, activeSession, onB
         </div>
       ) : (
         // Main Header (Lean & Modern)
-        <div className="flex flex-col md:flex-row md:items-center justify-between w-full max-w-2xl mx-auto gap-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-black m-0 flex items-center gap-1 overflow-visible">
-              <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded italic">P</span>
-              <span className="tracking-tighter whitespace-nowrap">oker Tracker by Khoi Tran</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full max-w-2xl mx-auto gap-3 sm:gap-4">
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <h1 className="text-base sm:text-lg font-black m-0 flex items-center gap-1.5 overflow-hidden truncate mr-2">
+              <span className="bg-primary text-primary-foreground px-1.5 py-0.5 rounded italic shrink-0">P</span>
+              <span className="tracking-tighter truncate">Poker Tracker by Khoi Tran</span>
             </h1>
-            <div className="md:hidden">
+            <div className="sm:hidden shrink-0">
               <ModeToggle />
             </div>
           </div>
 
-          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg self-center">
+          <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg self-center sm:self-auto w-full sm:w-auto justify-center">
             {tabs.map(tab => (
               <Button
                 key={tab.id}

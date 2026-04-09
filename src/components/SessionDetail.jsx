@@ -236,7 +236,7 @@ export default function SessionDetail({ session, updateSession, players, setPlay
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAddParticipant} className="flex flex-col sm:flex-row gap-3 mb-8">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 w-full min-w-0">
                 <Popover open={open} onOpenChange={setOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -248,7 +248,7 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                         selectedPlayerIds.length === 0 && "text-muted-foreground"
                       )}
                     >
-                      <div className="flex gap-1 overflow-x-auto no-scrollbar py-1">
+                      <div className="flex gap-1 overflow-x-auto no-scrollbar py-1 max-w-[calc(100vw-120px)] sm:max-w-none">
                         {selectedPlayerIds.length > 0 ? (
                           selectedPlayerIds.map(id => (
                             <Badge 
@@ -273,10 +273,14 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="p-0 w-[400px] rounded-2xl glass-card border-none overflow-hidden shadow-2xl" align="start">
+                  <PopoverContent 
+                    className="p-0 w-[calc(100vw-32px)] sm:w-[500px] rounded-2xl glass-card border-none overflow-hidden shadow-2xl" 
+                    align="start"
+                    sideOffset={8}
+                  >
                     {isBulkMode ? (
-                      <div className="flex flex-col p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-                        <div className="flex justify-between items-center bg-primary/5 -mx-5 -mt-5 p-4 mb-2 border-b border-border/20">
+                      <div className="flex flex-col p-4 sm:p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center bg-primary/5 -mx-4 sm:-mx-5 -mt-4 sm:-mt-5 p-4 mb-2 border-b border-border/20">
                           <span className="font-black tracking-tight text-primary uppercase text-xs">Bulk Mode</span>
                           <Button 
                             variant="ghost" 
@@ -288,10 +292,10 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                           </Button>
                         </div>
                         
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <Textarea
                             placeholder="Paste names separated by commas or line breaks..."
-                            className="min-h-[180px] text-lg font-bold bg-muted/20 border-none shadow-inner rounded-2xl p-4 focus-visible:ring-primary/10 no-scrollbar"
+                            className="min-h-[160px] sm:min-h-[180px] text-base sm:text-lg font-bold bg-muted/20 border-none shadow-inner rounded-2xl p-4 focus-visible:ring-primary/10 no-scrollbar"
                             value={bulkNames}
                             onChange={(e) => setBulkNames(e.target.value)}
                             autoFocus

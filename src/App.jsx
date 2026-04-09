@@ -66,7 +66,7 @@ export default function App() {
         activeSession={selectedSessionId ? sessions.find(s => s.id === selectedSessionId) : null}
         onBackToSessions={() => setSelectedSessionId(null)}
       />
-      <main className="container max-w-2xl mx-auto px-4 py-8">
+      <main className="container max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full overflow-x-hidden">
         {renderContent()}
       </main>
       <Toaster />
