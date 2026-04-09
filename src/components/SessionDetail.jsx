@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,18 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users, Trash2, Plus, X, ChevronsUpDown, AlertCircle, CheckCircle2, Search, UserPlus, Check, ListPlus } from "lucide-react";
 
+const generateUniqueName = (name, currentPlayers) => {
+  let uniqueName = name.trim();
+  let counter = 2;
+  const existingNames = currentPlayers.map(p => p.name.toLowerCase());
+  
+  while (existingNames.includes(uniqueName.toLowerCase())) {
+    uniqueName = `${name.trim()} #${counter}`;
+    counter++;
+  }
+  return uniqueName;
+};
+
 export default function SessionDetail({ session, updateSession, players, setPlayers }) {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState([]);
   const [open, setOpen] = useState(false);
@@ -49,6 +61,27 @@ export default function SessionDetail({ session, updateSession, players, setPlay
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [bulkNames, setBulkNames] = useState("");
   const [searchValue, setSearchValue] = useState("");
+
+  const availablePlayers = useMemo(() => {
+    if (!session) return [];
+    return players.filter(
+      p => !session.participants.some(part => part.playerId === p.id)
+    );
+  }, [players, session]);
+
+  const filteredAvailablePlayers = useMemo(() => {
+    if (!searchValue.trim()) return availablePlayers;
+    const search = searchValue.toLowerCase().trim();
+    return availablePlayers.filter(p => 
+      p.name.toLowerCase().includes(search)
+    );
+  }, [availablePlayers, searchValue]);
+
+  const hasExactRosterMatch = useMemo(() => {
+    if (!searchValue.trim()) return false;
+    const search = searchValue.toLowerCase().trim();
+    return players.some(p => p.name.toLowerCase() === search);
+  }, [players, searchValue]);
 
   if (!session) return null;
 
@@ -89,28 +122,25 @@ export default function SessionDetail({ session, updateSession, players, setPlay
       .map(n => n.trim())
       .filter(n => n.length > 0);
 
-    const uniqueInputNames = [...new Set(names)];
-    const existingNames = new Set(players.map(p => p.name.toLowerCase()));
-    const newNames = uniqueInputNames.filter(n => !existingNames.has(n.toLowerCase()));
+    const newPlayersList = [...players];
+    const registeredPlayers = [];
 
-    if (newNames.length === 0) {
-      toast.info("No new players found.");
-      return;
-    }
+    names.forEach(name => {
+      const uniqueName = generateUniqueName(name, newPlayersList);
+      const newPlayer = {
+        id: (Date.now() + Math.random()).toString(),
+        name: uniqueName
+      };
+      newPlayersList.push(newPlayer);
+      registeredPlayers.push(newPlayer);
+    });
 
-    const newPlayers = newNames.map(name => ({
-      id: (Date.now() + Math.random()).toString(),
-      name: name
-    }));
-
-    setPlayers([...players, ...newPlayers]);
-    
-    // Automatically select all NEW players
-    setSelectedPlayerIds(prev => [...prev, ...newPlayers.map(p => p.id)]);
+    setPlayers(newPlayersList);
+    setSelectedPlayerIds(prev => [...prev, ...registeredPlayers.map(p => p.id)]);
     
     setBulkNames("");
     setIsBulkMode(false);
-    toast.success(`Registered ${newPlayers.length} players to the roster.`);
+    toast.success(`Registered ${registeredPlayers.length} players to the roster.`);
   };
 
   const handleUpdateParticipant = (playerId, field, value) => {
@@ -152,11 +182,6 @@ export default function SessionDetail({ session, updateSession, players, setPlay
   
   const balanceDifference = totalBuyIn - totalCashOut;
   const isBalanced = balanceDifference === 0;
-
-  // Players available to add (not already in session)
-  const availablePlayers = players.filter(
-    p => !session.participants.some(part => part.playerId === p.id)
-  );
 
   return (
     <div className="animate-slide-up w-full space-y-6">
@@ -279,129 +304,139 @@ export default function SessionDetail({ session, updateSession, players, setPlay
                         <Button 
                           onClick={handleBulkQuickCreate}
                           disabled={!bulkNames.trim()}
-                          className="h-12 rounded-xl shadow-lg shadow-primary/20 font-black tracking-tight active:scale-95 transition-all text-base"
+                          className="h-12 rounded-xl shadow-lg shadow-primary/20 font-black tracking-tight active:scale-95 transition-all text-base mt-auto"
                         >
                           Register & Select All
                           <Plus className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
                     ) : (
-                      <Command className="bg-transparent" shouldFilter={true}>
-                        <div className="flex items-center border-b border-border/20 px-3 h-14">
-                          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                          <CommandInput 
-                            placeholder="Find or register players..." 
-                            className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 font-bold"
-                            value={searchValue}
-                            onValueChange={setSearchValue}
-                          />
-                        </div>
-                        <CommandList className="max-h-[350px] overflow-y-auto no-scrollbar pb-12 relative">
-                          <CommandEmpty>
-                            <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4">
-                              {searchValue ? (
-                                <>
-                                  <div className="p-4 bg-primary/5 rounded-full">
-                                    <UserPlus className="h-6 w-6 text-primary" />
-                                  </div>
-                                  <div className="text-center space-y-1">
-                                    <p className="font-black text-lg">"{searchValue}"</p>
-                                    <p className="text-xs text-muted-foreground font-medium">New player found!</p>
-                                  </div>
-                                  <Button 
-                                    size="sm"
-                                    onClick={() => {
+                      <div className="flex flex-col h-full max-h-[450px]">
+                        <Command className="bg-transparent" shouldFilter={false}>
+                          <div className="flex items-center border-b border-border/20 h-14 bg-muted/5">
+                            <CommandInput 
+                              placeholder="Search or register players..." 
+                              className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 border-none focus:ring-0 font-bold"
+                              value={searchValue}
+                              onValueChange={setSearchValue}
+                            />
+                          </div>
+                          <CommandList className="flex-1 overflow-y-auto no-scrollbar pb-2">
+                            <CommandEmpty>
+                              <div className="flex flex-col items-center justify-center py-10 px-4 space-y-4">
+                                {searchValue.trim() ? (
+                                  <>
+                                    <div className="p-4 bg-primary/5 rounded-full">
+                                      <UserPlus className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                      <p className="font-black text-lg">"{searchValue}"</p>
+                                      <p className="text-xs text-muted-foreground font-medium">
+                                        {hasExactRosterMatch ? "Already in roster." : "Player not in roster."}
+                                      </p>
+                                    </div>
+                                    <Button 
+                                      size="sm"
+                                      onClick={() => {
+                                        const uniqueName = generateUniqueName(searchValue.trim(), players);
+                                        const newPlayer = {
+                                          id: (Date.now() + Math.random()).toString(),
+                                          name: uniqueName
+                                        };
+                                        setPlayers([...players, newPlayer]);
+                                        setSelectedPlayerIds(prev => [...prev, newPlayer.id]);
+                                        setSearchValue("");
+                                        toast.success(`Registered ${uniqueName}`);
+                                      }}
+                                      className="rounded-xl font-bold h-10 px-6 shadow-md shadow-primary/10"
+                                    >
+                                      {hasExactRosterMatch ? `Add Another "${searchValue}"` : `Register & Select`}
+                                    </Button>
+                                  </>
+                                ) : availablePlayers.length === 0 ? (
+                                  <>
+                                    <CheckCircle2 className="h-10 w-10 text-primary/20" />
+                                    <p className="text-sm text-muted-foreground font-medium max-w-[150px] mx-auto leading-relaxed text-center">
+                                      Everyone's already at the table.
+                                    </p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <AlertCircle className="h-8 w-8 text-muted-foreground/30" />
+                                    <p className="text-muted-foreground">No players match search.</p>
+                                  </>
+                                )}
+                              </div>
+                            </CommandEmpty>
+                            
+                            <CommandGroup>
+                              {/* Fast Add Option when searching */}
+                              {searchValue.trim() && (
+                                <CommandItem
+                                  onSelect={() => {
+                                      const uniqueName = generateUniqueName(searchValue.trim(), players);
                                       const newPlayer = {
                                         id: (Date.now() + Math.random()).toString(),
-                                        name: searchValue
+                                        name: uniqueName
                                       };
                                       setPlayers([...players, newPlayer]);
                                       setSelectedPlayerIds(prev => [...prev, newPlayer.id]);
                                       setSearchValue("");
-                                      toast.success(`Registered ${newPlayer.name}`);
-                                    }}
-                                    className="rounded-xl font-bold h-10 px-6 shadow-md shadow-primary/10"
-                                  >
-                                    Register & Select
-                                  </Button>
-                                </>
-                              ) : availablePlayers.length === 0 ? (
-                                <>
-                                  <CheckCircle2 className="h-10 w-10 text-primary/20" />
-                                  <p className="text-sm text-muted-foreground font-medium max-w-[150px] mx-auto leading-relaxed text-center">
-                                    Everyone's already at the table.
-                                  </p>
-                                </>
-                              ) : (
-                                <>
-                                  <AlertCircle className="h-8 w-8 text-muted-foreground/30" />
-                                  <p className="text-muted-foreground">No players match search.</p>
-                                </>
+                                      toast.success(`Registered ${uniqueName}`);
+                                  }}
+                                  className="h-14 px-4 cursor-pointer text-primary border-b border-border/10 bg-primary/5 hover:bg-primary/10 transition-colors"
+                                >
+                                  <Plus className="mr-3 h-4 w-4 opacity-50" />
+                                  <div className="flex flex-col">
+                                    <span className="font-black text-sm">
+                                      {hasExactRosterMatch ? `Add Another "${searchValue}"` : `Register "${searchValue}"`}
+                                    </span>
+                                    <span className="text-[10px] opacity-60 uppercase font-black tracking-widest">
+                                      {hasExactRosterMatch ? "Duplicate Name Entry" : "New Entry"}
+                                    </span>
+                                  </div>
+                                </CommandItem>
                               )}
-                            </div>
-                          </CommandEmpty>
-                          
-                          <CommandGroup>
-                            {/* Fast Add Option when searching */}
-                            {searchValue && !availablePlayers.some(p => p.name.toLowerCase() === searchValue.toLowerCase()) && (
-                              <CommandItem
-                                onSelect={() => {
-                                    const newPlayer = {
-                                      id: (Date.now() + Math.random()).toString(),
-                                      name: searchValue
-                                    };
-                                    setPlayers([...players, newPlayer]);
-                                    setSelectedPlayerIds(prev => [...prev, newPlayer.id]);
-                                    setSearchValue("");
-                                    toast.success(`Registered ${newPlayer.name}`);
-                                }}
-                                className="h-14 px-4 cursor-pointer text-primary border-b border-border/10 bg-primary/5 hover:bg-primary/10 transition-colors"
-                              >
-                                <Plus className="mr-3 h-4 w-4 opacity-50" />
-                                <div className="flex flex-col">
-                                  <span className="font-black text-sm">Register "{searchValue}"</span>
-                                  <span className="text-[10px] opacity-60 uppercase font-black tracking-widest">New Roster Entry</span>
-                                </div>
-                              </CommandItem>
-                            )}
 
-                            {availablePlayers.map((player) => (
-                              <CommandItem
-                                key={player.id}
-                                value={player.name}
-                                onSelect={() => togglePlayerSelection(player.id)}
-                                className="h-14 px-4 cursor-pointer data-[selected=true]:bg-primary/5 transition-colors border-b border-border/5 group"
-                              >
-                                <div className={cn(
-                                  "mr-3 flex h-5 w-5 items-center justify-center rounded-md border-2 border-primary/20 transition-all scale-100",
-                                  selectedPlayerIds.includes(player.id)
-                                    ? "bg-primary border-primary text-primary-foreground scale-105"
-                                    : "opacity-40 group-hover:opacity-100"
-                                )}>
-                                  {selectedPlayerIds.includes(player.id) && (
-                                    <Check className="h-3.5 w-3.5 stroke-[4]" />
-                                  )}
-                                </div>
-                                <span className="font-bold text-sm tracking-tight">{player.name}</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-
-                          <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-background to-transparent pt-6 pointer-events-none"></div>
-                          
-                          <div className="absolute bottom-1 left-1 right-1 pointer-events-auto">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => setIsBulkMode(true)}
-                              className="w-full h-10 rounded-xl bg-muted/30 border-none hover:bg-primary/5 hover:text-primary font-black text-[10px] uppercase tracking-widest transition-all"
-                            >
-                              <ListPlus className="mr-2 h-3.5 w-3.5" />
-                              Bulk Roster Entry
-                            </Button>
-                          </div>
-                        </CommandList>
-                      </Command>
+                              {filteredAvailablePlayers.map((player) => (
+                                <CommandItem
+                                  key={player.id}
+                                  value={player.name}
+                                  onSelect={() => {
+                                    togglePlayerSelection(player.id);
+                                    setSearchValue(""); // Clear search on select
+                                  }}
+                                  className="h-14 px-4 cursor-pointer data-[selected=true]:bg-primary/5 transition-colors border-b border-border/5 group"
+                                >
+                                  <div className={cn(
+                                    "mr-3 flex h-5 w-5 items-center justify-center rounded-md border-2 border-primary/20 transition-all scale-100",
+                                    selectedPlayerIds.includes(player.id)
+                                      ? "bg-primary border-primary text-primary-foreground scale-105"
+                                      : "opacity-40 group-hover:opacity-100"
+                                  )}>
+                                    {selectedPlayerIds.includes(player.id) && (
+                                      <Check className="h-3.5 w-3.5 stroke-[4]" />
+                                    )}
+                                  </div>
+                                  <span className="font-bold text-sm tracking-tight">{player.name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                        
+                        <div className="p-2 border-t border-border/20 bg-muted/5">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setIsBulkMode(true)}
+                            className="w-full h-10 rounded-xl bg-muted/20 border-none hover:bg-primary/5 hover:text-primary font-black text-[10px] uppercase tracking-widest transition-all"
+                          >
+                            <ListPlus className="mr-2 h-3.5 w-3.5" />
+                            Bulk Roster Entry
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </PopoverContent>
                 </Popover>

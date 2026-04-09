@@ -24,6 +24,18 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Trash2, UserPlus, Users, ListPlus } from "lucide-react";
 
+const generateUniqueName = (name, currentPlayers) => {
+  let uniqueName = name.trim();
+  let counter = 2;
+  const existingNames = currentPlayers.map(p => p.name.toLowerCase());
+  
+  while (existingNames.includes(uniqueName.toLowerCase())) {
+    uniqueName = `${name.trim()} #${counter}`;
+    counter++;
+  }
+  return uniqueName;
+};
+
 export default function PlayersView({ players, setPlayers }) {
   const [newPlayerName, setNewPlayerName] = useState('');
   const [playerToDelete, setPlayerToDelete] = useState(null);
@@ -42,9 +54,10 @@ export default function PlayersView({ players, setPlayers }) {
       return;
     }
 
+    const uniqueName = generateUniqueName(newPlayerName, players);
     const newPlayer = {
       id: Date.now().toString(),
-      name: newPlayerName.trim()
+      name: uniqueName
     };
     
     setPlayers([...players, newPlayer]);
@@ -62,33 +75,21 @@ export default function PlayersView({ players, setPlayers }) {
       .map(n => n.trim())
       .filter(n => n.length > 0);
 
-    // Remove internal duplicates
-    const uniqueInputNames = [...new Set(names)];
-    
-    // Filter out names that already exist (case insensitive)
-    const existingNames = new Set(players.map(p => p.name.toLowerCase()));
-    const newNames = uniqueInputNames.filter(n => !existingNames.has(n.toLowerCase()));
+    const newPlayersList = [...players];
+    const registeredCount = names.length;
 
-    if (newNames.length === 0) {
-      toast.info("No new unique players were found in your list.");
-      setIsBulkAdding(false);
-      setBulkNames("");
-      return;
-    }
+    names.forEach(name => {
+      const uniqueName = generateUniqueName(name, newPlayersList);
+      newPlayersList.push({
+        id: (Date.now() + Math.random()).toString(),
+        name: uniqueName
+      });
+    });
 
-    const newPlayers = newNames.map(name => ({
-      id: (Date.now() + Math.random()).toString(),
-      name: name
-    }));
-
-    setPlayers([...players, ...newPlayers]);
+    setPlayers(newPlayersList);
     setBulkNames("");
     setIsBulkAdding(false);
-    toast.success(`Successfully added ${newPlayers.length} new players.`);
-    
-    if (uniqueInputNames.length > newNames.length) {
-      toast.info(`${uniqueInputNames.length - newNames.length} duplicates were skipped.`);
-    }
+    toast.success(`Registered ${registeredCount} players to roster.`);
   };
 
   const confirmDelete = () => {
