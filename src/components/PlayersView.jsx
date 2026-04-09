@@ -49,7 +49,7 @@ export default function PlayersView({ players, setPlayers }) {
 
   return (
     <div className="animate-slide-up w-full space-y-6">
-      <Card className="border-none shadow-xl bg-card/60 backdrop-blur-sm">
+      <Card className="glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-xl font-extrabold tracking-tight flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
@@ -72,8 +72,8 @@ export default function PlayersView({ players, setPlayers }) {
         </CardContent>
       </Card>
 
-      <Card className="border-none shadow-xl bg-card/60 backdrop-blur-sm">
-        <CardHeader className="pb-3">
+      <Card className="glass-card">
+        <CardHeader className="pb-3 bg-muted/5">
           <CardTitle className="text-xl font-extrabold tracking-tight flex items-center gap-2">
             <Users className="h-5 w-5 text-primary" />
             Global Roster
@@ -86,13 +86,17 @@ export default function PlayersView({ players, setPlayers }) {
             </div>
           ) : (
             <div className="flex flex-col gap-1">
-              {players.map(player => (
-                <div key={player.id} className="group flex justify-between items-center py-4 px-2 hover:bg-muted/30 rounded-lg transition-colors border-b border-border/50 last:border-0">
+              {players.map((player, index) => (
+                <div 
+                  key={player.id} 
+                  className="group flex justify-between items-center py-5 px-3 hover:bg-muted/50 rounded-xl transition-all border-b border-border/30 last:border-0 animate-slide-up"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
                   <span className="font-bold text-lg tracking-tight">{player.name}</span>
                   <Button 
                     variant="ghost"
                     size="icon"
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all active:scale-90"
                     onClick={() => setPlayerToDelete(player)}
                   >
                     <Trash2 className="h-4 w-4" />

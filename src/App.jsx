@@ -39,6 +39,7 @@ export default function App() {
             session={session} 
             updateSession={updateSession}
             players={players}
+            setPlayers={setPlayers}
           />
         );
       }

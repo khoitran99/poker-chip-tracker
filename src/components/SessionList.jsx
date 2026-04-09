@@ -120,14 +120,15 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
           <p className="text-muted-foreground text-sm max-w-[200px] mx-auto">Toss some cards and start your first session above.</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {sessions.map(session => {
+        <div className="grid gap-4 sm:gap-6">
+          {sessions.map((session, index) => {
             const totalBuyIn = getSessionStats(session.participants);
             
             return (
               <div 
                 key={session.id} 
-                className="group relative bg-card text-card-foreground border border-border cursor-pointer p-6 transition-all duration-300 hover:ring-2 hover:ring-primary/20 hover:border-primary/30 rounded-2xl shadow-sm overflow-hidden" 
+                className="group relative glass-card cursor-pointer p-6 animate-slide-up" 
+                style={{ animationDelay: `${index * 80}ms` }}
                 onClick={() => onSelectSession(session.id)}
               >
                 <div className="flex justify-between items-start relative z-10">
@@ -144,7 +145,7 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1 -mr-2"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 -mt-1 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSessionToDelete(session);
@@ -154,11 +155,14 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
                   </Button>
                 </div>
                 
-                <div className="mt-6 flex justify-between items-end border-t border-border pt-4">
+                <div className="mt-6 flex justify-between items-end border-t border-border/40 pt-4">
                   <div className="flex gap-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-0.5">Players</span>
-                      <span className="text-sm font-bold">{session.participants.length}</span>
+                      <span className="text-sm font-bold flex items-center">
+                        <History className="h-3 w-3 mr-1 text-primary/40" />
+                        {session.participants.length}
+                      </span>
                     </div>
                   </div>
                   <div className="text-right">
@@ -170,7 +174,7 @@ export default function SessionList({ sessions, setSessions, onSelectSession }) 
                 </div>
                 
                 {/* Subtle gradient accent for hover */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-primary/20 transition-all duration-700" />
               </div>
             );
           })}
