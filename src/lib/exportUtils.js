@@ -6,13 +6,27 @@ import * as XLSX from 'xlsx';
  * @param {Array} playersRoster - The global roster of players to resolve names.
  */
 export const exportSessionToExcel = (session, playersRoster) => {
+  const dealerFee = Number(session.dealerFee) || 0;
+  const dealerParticipant = session.participants.find(p => p.isDealer);
+  const numOthers = session.participants.length - (dealerParticipant ? 1 : 0);
+  const totalFeesCollected = numOthers * dealerFee;
+
   const data = session.participants.map(p => {
     const playerName = playersRoster.find(r => r.id === p.playerId)?.name || 'Unknown';
     const buyIn = Number(p.buyIn) || 0;
     const cashOut = Number(p.cashOut) || 0;
-    const profit = cashOut - buyIn;
+    
+    let profit = cashOut - buyIn;
+    if (dealerFee > 0 && dealerParticipant) {
+      if (p.isDealer) {
+        profit += totalFeesCollected;
+      } else {
+        profit -= dealerFee;
+      }
+    }
+
     return {
-      'Player Name': playerName,
+      'Player Name': p.isDealer ? `${playerName} (Dealer)` : playerName,
       'Buy In': buyIn,
       'Cash Out': cashOut,
       'Profit/Loss': profit,
@@ -41,13 +55,27 @@ export const exportBulkToExcel = (sessions, playersRoster) => {
   const wb = XLSX.utils.book_new();
 
   sessions.forEach((session, index) => {
+    const dealerFee = Number(session.dealerFee) || 0;
+    const dealerParticipant = session.participants.find(p => p.isDealer);
+    const numOthers = session.participants.length - (dealerParticipant ? 1 : 0);
+    const totalFeesCollected = numOthers * dealerFee;
+
     const data = session.participants.map(p => {
       const playerName = playersRoster.find(r => r.id === p.playerId)?.name || 'Unknown';
       const buyIn = Number(p.buyIn) || 0;
       const cashOut = Number(p.cashOut) || 0;
-      const profit = cashOut - buyIn;
+      
+      let profit = cashOut - buyIn;
+      if (dealerFee > 0 && dealerParticipant) {
+        if (p.isDealer) {
+          profit += totalFeesCollected;
+        } else {
+          profit -= dealerFee;
+        }
+      }
+
       return {
-        'Player Name': playerName,
+        'Player Name': p.isDealer ? `${playerName} (Dealer)` : playerName,
         'Buy In': buyIn,
         'Cash Out': cashOut,
         'Profit/Loss': profit,

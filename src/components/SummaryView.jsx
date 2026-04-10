@@ -48,9 +48,22 @@ export default function SummaryView({ sessions, players }) {
         const b = Number(p.buyIn) || 0;
         const c = Number(p.cashOut) || 0;
         
+        let profit = c - b;
+        const dFee = Number(session.dealerFee) || 0;
+        const sessionHasDealer = session.participants.some(part => part.isDealer);
+        
+        if (dFee > 0 && sessionHasDealer) {
+          if (p.isDealer) {
+            const numOthers = session.participants.length - 1;
+            profit += (numOthers * dFee);
+          } else {
+            profit -= dFee;
+          }
+        }
+        
         stats[p.playerId].buyIn += b;
         stats[p.playerId].cashOut += c;
-        stats[p.playerId].profit += (c - b);
+        stats[p.playerId].profit += profit;
         stats[p.playerId].sessionsPlayed += 1;
       });
     });

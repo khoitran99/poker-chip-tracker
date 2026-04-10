@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Trash2, Plus, X, AlertCircle, CheckCircle2, Search, UserPlus, Check, ListPlus, FileSpreadsheet } from "lucide-react";
+import { Users, Trash2, Plus, X, AlertCircle, CheckCircle2, Search, UserPlus, Check, ListPlus, FileSpreadsheet, Crown, Coins } from "lucide-react";
 
 const generateUniqueName = (name, currentPlayers) => {
   let uniqueName = name.trim();
@@ -149,6 +149,19 @@ export default function SessionDetail({ session, updateSession, players, setPlay
     });
   };
 
+  const toggleDealer = (playerId) => {
+    const updatedParticipants = session.participants.map(p => ({
+      ...p,
+      isDealer: p.playerId === playerId ? !p.isDealer : false
+    }));
+    updateSession(session.id, { ...session, participants: updatedParticipants });
+    if (!updatedParticipants.find(p => p.playerId === playerId)?.isDealer) {
+      toast.info("Dealer role removed.");
+    } else {
+      toast.success(`${getPlayerName(playerId)} set as Dealer.`);
+    }
+  };
+
   const confirmRemove = () => {
     if (participantToRemove) {
       const playerName = getPlayerName(participantToRemove);
@@ -166,6 +179,12 @@ export default function SessionDetail({ session, updateSession, players, setPlay
   
   let totalBuyIn = 0;
   let totalCashOut = 0;
+  
+  const dealerFee = Number(session.dealerFee) || 0;
+  const dealer = session.participants.find(p => p.isDealer);
+  const numOthers = session.participants.length - (dealer ? 1 : 0);
+  const totalFeesCollected = numOthers * dealerFee;
+
   session.participants.forEach(p => {
     totalBuyIn += Number(p.buyIn) || 0;
     totalCashOut += Number(p.cashOut) || 0;
@@ -216,6 +235,46 @@ export default function SessionDetail({ session, updateSession, players, setPlay
             <div className="flex items-center gap-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 dark:text-emerald-400">
               <CheckCircle2 className="h-5 w-5 shrink-0" />
               <p className="text-sm font-bold m-0">Accounting balances perfectly.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="glass-card shadow-lg border-primary/5">
+        <CardContent className="p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                <Coins className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground leading-none mb-1">Dealer Settings</p>
+                <h3 className="text-lg font-black tracking-tight leading-none">Automated Dealer Fee</h3>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-2xl border border-border/10 w-full sm:w-auto">
+              <div className="pl-3 pr-1 text-xs font-black uppercase tracking-widest text-muted-foreground border-r border-border/20 mr-1">
+                Fee
+              </div>
+              <Input
+                type="number"
+                min="0"
+                placeholder="0"
+                value={session.dealerFee || ""}
+                onChange={(e) => updateSession(session.id, { ...session, dealerFee: e.target.value })}
+                className="h-10 w-full sm:w-28 bg-transparent border-none text-right font-black text-xl focus-visible:ring-0 shadow-none p-0 pr-2"
+              />
+              <div className="font-black text-muted-foreground/40 pr-3">
+                $
+              </div>
+            </div>
+          </div>
+          
+          {dealerFee > 0 && !dealer && (
+            <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-widest bg-amber-500/5 p-2 rounded-lg border border-amber-500/10">
+              <AlertCircle className="h-3 w-3" />
+              Select a dealer below to apply fees
             </div>
           )}
         </CardContent>
@@ -434,25 +493,61 @@ export default function SessionDetail({ session, updateSession, players, setPlay
             {session.participants.map((p, index) => {
               const buyIn = Number(p.buyIn) || 0;
               const cashOut = Number(p.cashOut) || 0;
-              const profit = cashOut - buyIn;
+              
+              // Calculate adjusted profit based on dealer fee
+              let profit = cashOut - buyIn;
+              if (dealerFee > 0 && dealer) {
+                if (p.isDealer) {
+                  profit += totalFeesCollected;
+                } else {
+                  profit -= dealerFee;
+                }
+              }
+              
               const isProfit = profit >= 0;
 
               return (
                 <div 
                   key={p.playerId} 
-                  className="group relative bg-background/40 p-5 rounded-2xl border border-border/30 hover:border-primary/20 hover:bg-background/60 transition-all animate-slide-up"
+                  className={cn(
+                    "group relative bg-background/40 p-5 rounded-2xl border border-border/30 hover:border-primary/20 hover:bg-background/60 transition-all animate-slide-up",
+                    p.isDealer && "ring-2 ring-amber-500/50 bg-amber-500/5"
+                  )}
                   style={{ animationDelay: `${index * 80}ms` }}
                 >
                   <div className="flex justify-between items-center mb-4">
-                    <span className="font-extrabold text-xl tracking-tight">{getPlayerName(p.playerId)}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg group-hover:opacity-100 opacity-0 transition-opacity"
-                      onClick={() => setParticipantToRemove(p.playerId)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="font-extrabold text-xl tracking-tight truncate">{getPlayerName(p.playerId)}</span>
+                      {p.isDealer && (
+                        <Badge className="bg-amber-500 text-white border-none text-[10px] font-black tracking-widest px-2 h-5">
+                          DEALER
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleDealer(p.playerId)}
+                        className={cn(
+                          "h-10 w-10 transition-all rounded-xl",
+                          p.isDealer 
+                            ? "bg-amber-500 text-white hover:bg-amber-600 border-none shadow-lg shadow-amber-500/20" 
+                            : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <Crown className={cn("h-5 w-5", p.isDealer && "stroke-[3]")} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-10 w-10 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl group-hover:opacity-100 opacity-0 transition-opacity"
+                        onClick={() => setParticipantToRemove(p.playerId)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4">
